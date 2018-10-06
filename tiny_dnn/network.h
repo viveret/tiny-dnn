@@ -810,6 +810,11 @@ class network {
     }
   }
 
+template <typename Layer>
+ void insert(size_t pos, Layer* l) {
+  net_.insert(pos, l); // TODO: Fix for memory leaks
+}
+
  protected:
   float_t fprop_max(const vec_t &in) {
     const vec_t &prediction = fprop(in);

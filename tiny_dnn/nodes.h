@@ -212,7 +212,7 @@ class nodes {
       ia(*n);
     }
   }
-
+  
  protected:
   template <typename T>
   void push_back(T &&node) {
@@ -310,6 +310,33 @@ class sequential : public nodes {
       auto head = nodes_[nodes_.size() - 2];
       auto tail = nodes_[nodes_.size() - 1];
       connect(head, tail, 0, 0);
+      auto out = head->outputs();
+      auto in  = tail->inputs();
+    }
+    check_connectivity();
+  }
+
+  template <typename T>
+    void insert(size_t pos, T *layer) {
+
+    auto it = nodes_.begin();
+    nodes_.insert(it + pos, layer);
+
+    if (nodes_.size() != 1) {
+	auto head = pos > 0 ? nodes_[pos - 1] : NULL;
+	auto mid = nodes_[pos];
+	auto tail = pos + 1 < nodes_.size() ? nodes_[pos + 1] : NULL;
+
+      if (head != NULL) {
+/*        auto head = nodes_[pos - 1];
+        auto mid = nodes_[pos];
+        auto tail = nodes_[pos + 1];*/
+        connect(head, mid, 0, 0);
+      }
+if (tail != NULL) {
+        connect(mid, tail, 0, 0);
+}
+	
       auto out = head->outputs();
       auto in  = tail->inputs();
     }

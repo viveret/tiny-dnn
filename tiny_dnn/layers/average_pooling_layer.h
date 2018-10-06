@@ -168,6 +168,23 @@ class average_pooling_layer : public partial_connected_layer {
    *input
    * @param pad_type     [in] padding mode(same/valid)
    **/
+  average_pooling_layer(layer *prev,
+			size_t pool_size,
+                        size_t stride)
+    : average_pooling_layer(prev->out_shape()[0], pool_size, stride) {}
+
+  /**
+   * @param in_width     [in] width of input image
+   * @param in_height    [in] height of input image
+   * @param in_channels  [in] the number of input image channels(depth)
+   * @param pool_size_x  [in] factor by which to downscale
+   * @param pool_size_y  [in] factor by which to downscale
+   * @param stride_x     [in] interval at which to apply the filters to the
+   *input
+   * @param stride_y     [in] interval at which to apply the filters to the
+   *input
+   * @param pad_type     [in] padding mode(same/valid)
+   **/
   average_pooling_layer(size_t in_width,
                         size_t in_height,
                         size_t in_channels,
