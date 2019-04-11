@@ -73,6 +73,11 @@ class activation_layer : public layer {
 
   void forward_propagation(const std::vector<tensor_t *> &in_data,
                            std::vector<tensor_t *> &out_data) override {
+
+    if (in_data.size() <= 0 || in_data[0] == nullptr) {
+      throw new nn_error("in_data.size() <= 0 || in_data[0] == nullptr");
+    }
+
     const tensor_t &x = *in_data[0];
     tensor_t &y       = *out_data[0];
     for_i(x.size(), [&](size_t i) { forward_activation(x[i], y[i]); });

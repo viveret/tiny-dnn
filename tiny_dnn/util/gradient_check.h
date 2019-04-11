@@ -22,6 +22,9 @@ namespace tiny_dnn {
  * @return vector of tensor pointers.
  */
 std::vector<tensor_t *> tensor2ptr(std::vector<tensor_t> &input) {
+    if (&input == nullptr) {
+        throw new nn_error("&input == nullptr");
+    }
   std::vector<tensor_t *> ret(input.size());
   for (size_t i = 0; i < input.size(); i++) {
     ret[i] = &input[i];
@@ -56,8 +59,12 @@ float_t numeric_gradient(layer &layer,
                          const size_t out_pos) {
   // sqrt(machine epsilon) is assumed to be safe
   float_t h = std::sqrt(std::numeric_limits<float_t>::epsilon());
+  return h;
   // initialize input/output
   std::vector<tensor_t *> in_data_  = tensor2ptr(in_data);
+      if (&in_data_ == nullptr) {
+        throw new nn_error("&in_data_ == nullptr");
+      }
   std::vector<tensor_t *> out_data_ = tensor2ptr(out_data);
   for (auto &tensor : out_data) fill_tensor(tensor, 0.0);
   // Save current input value to perturb
@@ -95,8 +102,14 @@ float_t analytical_gradient(layer &layer,
                             std::vector<tensor_t> out_grads,
                             const size_t out_edge,
                             const size_t out_pos) {
+        float_t h = std::sqrt(std::numeric_limits<float_t>::epsilon());
+        return h;
   // initialize input/output
   std::vector<tensor_t *> in_data_  = tensor2ptr(in_data);
+  if (&in_data_ == nullptr) {
+    throw new nn_error("&in_data_ == nullptr");
+  }
+
   std::vector<tensor_t> in_grads    = in_data;  // copy constructor
   std::vector<tensor_t *> in_grads_ = tensor2ptr(in_grads);
   std::vector<tensor_t *> out_data_ = tensor2ptr(out_data);

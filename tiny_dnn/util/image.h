@@ -95,7 +95,8 @@ class image {
   typedef typename std::vector<intensity_t>::iterator iterator;
   typedef typename std::vector<intensity_t>::const_iterator const_iterator;
 
-  image() : width_(0), height_(0), depth_(1) {}
+  image() : width_(1), height_(1), depth_(1), type_(image_type::grayscale), data_(1) {
+  }
 
   /**
    * create image from raw pointer
@@ -105,8 +106,18 @@ class image {
       height_(height),
       depth_(type == image_type::grayscale ? 1 : 3),
       type_(type),
-      data_(depth_ * width_ * height_, 0) {
-    std::copy(data, data + width * height * depth_, &data_[0]);
+      data_(depth_ * width_ * height_)
+       {
+    std::copy(data, data + width * height * depth_, data_.begin());
+  }
+
+    image(std::vector<T> data, size_t width, size_t height, image_type type)
+        : width_(width),
+                height_(height),
+                depth_(type == image_type::grayscale ? 1 : 3),
+                type_(type),
+          data_(data)
+               {
   }
 
   /**
@@ -117,7 +128,7 @@ class image {
       height_(size.height_),
       depth_(size.depth_),
       type_(type),
-      data_(depth_ * width_ * height_, 0) {
+      data_(width_ * height_ * depth_) {
     if (type == image_type::grayscale && size.depth_ != 1) {
       throw nn_error("depth must be 1 in grayscale");
     } else if (type != image_type::grayscale && size.depth_ != 3) {
@@ -131,7 +142,7 @@ class image {
       height_(rhs.height()),
       depth_(rhs.depth()),
       type_(rhs.type()),
-      data_(rhs.shape().size()) {
+      data_(width_ * height_ * depth_) {
     std::transform(rhs.begin(), rhs.end(), data_.begin(),
                    [](T src) { return static_cast<intensity_t>(src); });
   }
@@ -221,7 +232,7 @@ class image {
   size_t depth() const { return depth_; }
   image_type type() const { return type_; }
   shape3d shape() const { return shape3d(width_, height_, depth_); }
-  const std::vector<intensity_t> &data() const { return data_; }
+  const std::vector<intensity_t> data() const { return std::vector<intensity_t>(data_); }
   vec_t to_vec() const { return vec_t(begin(), end()); }
 
   template <typename U>
@@ -369,12 +380,12 @@ image<T> subtract_scalar(const image<T> &lhs, const image<T> &rhs) {
  *   ----------
  **/
 template <typename T>
-inline image<T> vec2image(const vec_t &vec,
+inline image<T> *vec2image(const vec_t &vec,
                           size_t block_size = 2,
                           size_t max_cols   = 20) {
-  if (vec.empty()) throw nn_error("failed to visialize image: vector is empty");
+  if (vec.empty()) throw nn_error("failed to visualize image: vector is empty");
 
-  image<T> img;
+  image<T> *img = new image<T>();
   const size_t border_width = 1;
   const auto cols =
     vec.size() >= (size_t)max_cols ? (size_t)max_cols : vec.size();
@@ -385,8 +396,8 @@ inline image<T> vec2image(const vec_t &vec,
   const typename image<T>::intensity_t bg_color = 255;
   size_t current_idx                            = 0;
 
-  img.resize(width, height);
-  img.fill(bg_color);
+  img->resize(width, height);
+  img->fill(bg_color);
 
   auto minmax = std::minmax_element(vec.begin(), vec.end());
 
@@ -401,7 +412,7 @@ inline image<T> vec2image(const vec_t &vec,
 
       for (size_t y = 0; y < block_size; y++)
         for (size_t x = 0; x < block_size; x++)
-          img.at(x + leftx, y + topy) = dst;
+          img->at(x + leftx, y + topy) = dst;
 
       if (current_idx == vec.size()) return img;
     }
@@ -424,7 +435,7 @@ inline image<T> vec2image(const vec_t &vec,
  *  -------
  **/
 template <typename T>
-inline image<T> vec2image(const vec_t &vec, const index3d<size_t> &maps) {
+inline image<T> *vec2image(const vec_t &vec, const index3d<size_t> &maps) {
   if (vec.empty()) throw nn_error("failed to visualize image: vector is empty");
   if (vec.size() != maps.size())
     throw nn_error("failed to visualize image: vector size invalid");
@@ -434,10 +445,10 @@ inline image<T> vec2image(const vec_t &vec, const index3d<size_t> &maps) {
   const auto width          = maps.depth_ * pitch + border_width;
   const auto height         = maps.height_ + 2 * border_width;
   const typename image<T>::intensity_t bg_color = 255;
-  image<T> img;
+  image<T> *img = new image<T>();
 
-  img.resize(width, height);
-  img.fill(bg_color);
+  img->resize(width, height);
+  img->fill(bg_color);
 
   auto minmax = std::minmax_element(vec.begin(), vec.end());
 
@@ -449,7 +460,7 @@ inline image<T> vec2image(const vec_t &vec, const index3d<size_t> &maps) {
       for (size_t x = 0; x < maps.width_; ++x) {
         const float_t val = vec[maps.get_index(x, y, c)];
 
-        img.at(left + x, top + y) = static_cast<typename image<T>::intensity_t>(
+        img->at(left + x, top + y) = static_cast<typename image<T>::intensity_t>(
           rescale(val, *minmax.first, *minmax.second, 0, 255));
       }
     }

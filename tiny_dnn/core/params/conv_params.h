@@ -104,7 +104,7 @@ class Conv2dPadding {
    * @param out The output tensor with padding applied
    */
   void copy_and_pad_input(const tensor_t &in, tensor_t &out) {
-    if (params_.pad_type == padding::valid) {
+    if (params_.pad_type == padding::valid || in.size() == 0) {
       return;
     }
 

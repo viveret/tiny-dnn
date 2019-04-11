@@ -401,9 +401,31 @@ class layer : public node {
 ///< so "visual" layer(like convolutional layer) should override this for better
 /// visualization.
 #ifdef DNN_USE_IMAGE_API
-  virtual image<> output_to_image(size_t channel = 0) const {
-    const vec_t *output = &(*(outputs()[channel]->get_data()))[0];
-    return vec2image<unsigned char>(*output, out_shape()[channel]);
+  virtual image<unsigned char> *output_to_image(size_t channel = 0) const {
+    if (outputs().size() > channel) {
+        auto output_at_channel = outputs()[channel];
+        if (output_at_channel != nullptr) {
+            auto data_at_channel = output_at_channel->get_data();
+            if (data_at_channel != nullptr) {
+              if (data_at_channel->size() > 0) {
+                auto outputCollection = data_at_channel[0];
+                if (outputCollection.size() > 0) {
+                  return vec2image<unsigned char>(outputCollection[0], out_shape()[channel]);
+                } else {
+                  throw tiny_dnn::nn_error("Not wide enough output data at channel index");
+                }
+              } else {
+                throw tiny_dnn::nn_error("Not enough output data at channel index");
+              }
+            } else {
+              throw tiny_dnn::nn_error("No output data at channel index");
+            }
+        } else {
+            throw tiny_dnn::nn_error("No output node at channel index");
+        }
+    } else {
+        throw tiny_dnn::nn_error("Output size does not meet channel index");
+    }
   }
 #endif
 
@@ -526,6 +548,14 @@ class layer : public node {
    */
   void forward() {
     // the computational graph
+    if (in_channels_ == 0 || out_channels_ == 0) {
+      throw new nn_error("in channels or out channels was 0");
+    } else if (&fwd_in_data_ == nullptr) {
+      throw new nn_error("&fwd_in_data_ == nullptr");
+    } else if (&fwd_out_data_ == nullptr) {
+      throw new nn_error("&fwd_out_data_ == nullptr");
+    }
+
     fwd_in_data_.resize(in_channels_);
     fwd_out_data_.resize(out_channels_);
 
@@ -534,7 +564,11 @@ class layer : public node {
     // computational graph and will allocate memory in case that it's not
     // done yet.
     for (size_t i = 0; i < in_channels_; i++) {
-      fwd_in_data_[i] = ith_in_node(i)->get_data();
+      auto nodeData = ith_in_node(i)->get_data();
+      if (nodeData == nullptr) {
+        throw new nn_error("nodeData == null");
+      }
+      fwd_in_data_[i] = nodeData;
     }
 
     // resize outs and stuff to have room for every input sample in

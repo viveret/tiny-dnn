@@ -213,6 +213,10 @@ class nodes {
     }
   }
 
+    void insert(size_t insertPosition, layer *l) {
+      nodes_.insert(nodes_.begin() + insertPosition, std::forward<layer*>(l));
+    }
+
  protected:
   template <typename T>
   void push_back(T &&node) {

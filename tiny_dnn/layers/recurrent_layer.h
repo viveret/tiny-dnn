@@ -75,7 +75,7 @@ class recurrent_layer : public layer {
       bptt_max_((params.bptt_max > 0 ? params.bptt_max : seq_len)),
       bptt_count_(0),
       reset_state_(params.reset_state),
-      seq_len_(seq_len) {
+      seq_len_(seq_len), input_buffer_() {
     layer::set_backend_type(params.backend_type);
     cell_->init_backend(
       static_cast<layer *>(this));  // depends on layer::set_backend_type!
@@ -89,7 +89,7 @@ class recurrent_layer : public layer {
       bptt_max_(std::move(other.bptt_max_)),
       bptt_count_(std::move(other.bptt_count_)),
       reset_state_(std::move(other.reset_state_)),
-      seq_len_(std::move(other.seq_len_)) {
+      seq_len_(std::move(other.seq_len_)), input_buffer_() {
     cell_->init_backend(static_cast<layer *>(this));
     init();
   }
@@ -154,6 +154,7 @@ class recurrent_layer : public layer {
    */
   void forward_propagation(const std::vector<tensor_t *> &in_data,
                            std::vector<tensor_t *> &out_data) override {
+      return;
     size_t batch_size = (*out_data[0]).size() / seq_len_;
     // create buffers to store the batches of the sequences
     reshape_forward_buffers_(batch_size, in_data);

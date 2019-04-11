@@ -283,6 +283,25 @@ class convolutional_layer : public layer {
   void forward_propagation(const std::vector<tensor_t *> &in_data,
                            std::vector<tensor_t *> &out_data) override {
     // apply padding to the input tensor
+      if (&in_data == nullptr) {
+          throw tiny_dnn::nn_error("In data size too small to forward propagate null");
+      }
+      if (in_data.size() <= 0) {
+          throw tiny_dnn::nn_error("In data size too small to forward propagate 1");
+      }
+      if (in_data[0] == nullptr) {
+          throw tiny_dnn::nn_error("In data size too small to forward propagate 2");
+      }
+      if (in_data[0]->size() <= 0) {
+          throw tiny_dnn::nn_error("In data size too small to forward propagate 3");
+      }
+      if (in_data[0][0].size() <= 0) {
+          throw tiny_dnn::nn_error("In data size too small to forward propagate 4");
+      }
+      if (in_data[0][0][0].size() == 0) {
+          throw tiny_dnn::nn_error("In data size too small to forward propagate 5");
+      }
+
     padding_op_.copy_and_pad_input(*in_data[0], cws_.prev_out_padded_);
 
     fwd_in_data_.resize(in_data.size());
@@ -382,8 +401,8 @@ class convolutional_layer : public layer {
   }
 
 #ifdef DNN_USE_IMAGE_API
-  image<> weight_to_image() const {
-    image<> img;
+  image<> *weight_to_image() const {
+    image<> *img = new image<>();
     const size_t border_width = 1;
     const auto pitch          = params_.weight.width_ + border_width;
     const auto width          = params_.out.depth_ * pitch + border_width;
@@ -391,8 +410,8 @@ class convolutional_layer : public layer {
     const image<>::intensity_t bg_color = 255;
     const vec_t &W                      = *this->weights()[0];
 
-    img.resize(width, height);
-    img.fill(bg_color);
+    img->resize(width, height);
+    img->fill(bg_color);
 
     auto minmax = std::minmax_element(W.begin(), W.end());
 
@@ -411,7 +430,7 @@ class convolutional_layer : public layer {
             idx             = params_.weight.get_index(x, y, idx);
             const float_t w = W[idx];
 
-            img.at(left + x, top + y) = static_cast<image<>::intensity_t>(
+            img->at(left + x, top + y) = static_cast<image<>::intensity_t>(
               rescale(w, *minmax.first, *minmax.second, 0, 255));
           }
         }

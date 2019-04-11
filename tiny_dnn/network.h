@@ -37,6 +37,13 @@ enum class content_type {
 
 enum class file_format { binary, portable_binary, json };
 
+
+enum class train_result {
+    succeeded,
+    failure,
+    user_abort  ///< User has aborted training
+};
+
 struct result {
   result() : num_success(0), num_total(0) {}
 
@@ -281,7 +288,7 @@ class network {
             typename Optimizer,
             typename OnBatchEnumerate,
             typename OnEpochEnumerate>
-  bool train(Optimizer &optimizer,
+  train_result train(Optimizer &optimizer,
              const std::vector<vec_t> &inputs,
              const std::vector<label_t> &class_labels,
              size_t batch_size,
@@ -292,10 +299,10 @@ class network {
              const int n_threads              = CNN_TASK_SIZE,
              const std::vector<vec_t> &t_cost = std::vector<vec_t>()) {
     if (inputs.size() != class_labels.size()) {
-      return false;
+      return train_result::failure;
     }
     if (inputs.size() < batch_size || class_labels.size() < batch_size) {
-      return false;
+      return train_result::failure;
     }
     std::vector<tensor_t> input_tensor, output_tensor, t_cost_tensor;
     normalize_tensor(inputs, input_tensor);
@@ -365,7 +372,7 @@ class network {
             typename OnEpochEnumerate,
             typename T,
             typename U>
-  bool fit(Optimizer &optimizer,
+  train_result fit(Optimizer &optimizer,
            const std::vector<T> &inputs,
            const std::vector<U> &desired_outputs,
            size_t batch_size,
@@ -393,7 +400,7 @@ class network {
    * @param epoch              number of training epochs
    **/
   template <typename Error, typename Optimizer, typename T, typename U>
-  bool fit(Optimizer &optimizer,
+  train_result fit(Optimizer &optimizer,
            const std::vector<T> &inputs,
            const std::vector<U> &desired_outputs,
            size_t batch_size = 1,
@@ -410,7 +417,7 @@ class network {
    * @param epoch              number of training epochs
    **/
   template <typename Error, typename Optimizer>
-  bool train(Optimizer &optimizer,
+  train_result train(Optimizer &optimizer,
              const std::vector<vec_t> &inputs,
              const std::vector<label_t> &class_labels,
              size_t batch_size = 1,
@@ -423,7 +430,7 @@ class network {
    * @deprecated use fit instead for regression task
    **/
   template <typename Error, typename Optimizer>
-  bool train(Optimizer &optimizer,
+  train_result train(Optimizer &optimizer,
              const std::vector<vec_t> &in,
              const std::vector<vec_t> &t,
              size_t batch_size = 1,
@@ -809,6 +816,18 @@ class network {
       net_.load_weights(ar);
     }
   }
+    void insert(size_t insertPosition, layer *l) {
+      net_.insert(insertPosition, std::forward<layer*>(l));
+    }
+
+
+    int epoch_i() {
+        return epoch_at;
+    }
+
+    size_t batch_at() {
+        return batch_at_;
+    }
 
  protected:
   float_t fprop_max(const vec_t &in) {
@@ -837,7 +856,7 @@ class network {
             typename Optimizer,
             typename OnBatchEnumerate,
             typename OnEpochEnumerate>
-  bool fit(Optimizer &optimizer,
+  train_result fit(Optimizer &optimizer,
            const std::vector<tensor_t> &inputs,
            const std::vector<tensor_t> &desired_outputs,
            size_t batch_size,
@@ -857,16 +876,16 @@ class network {
     stop_training_ = false;
     in_batch_.resize(batch_size);
     t_batch_.resize(batch_size);
-    for (int iter = 0; iter < epoch && !stop_training_; iter++) {
-      for (size_t i = 0; i < inputs.size() && !stop_training_;
-           i += batch_size) {
+    for (epoch_at = 0; epoch_at < epoch && !stop_training_; epoch_at++) {
+      for (batch_at_ = 0; batch_at_ < inputs.size() && !stop_training_;
+           batch_at_ += batch_size) {
         train_once<Error>(
-          optimizer, &inputs[i], &desired_outputs[i],
-          static_cast<int>(std::min(batch_size, (size_t)inputs.size() - i)),
-          n_threads, get_target_cost_sample_pointer(t_cost, i));
+          optimizer, &inputs[batch_at_], &desired_outputs[batch_at_],
+          static_cast<int>(std::min(batch_size, (size_t)inputs.size() - batch_at_)),
+          n_threads, get_target_cost_sample_pointer(t_cost, batch_at_));
         on_batch_enumerate();
 
-        /* if (i % 100 == 0 && layers_.is_exploded()) {
+        /* if (batch_at_ % 100 == 0 && layers_.is_exploded()) {
           std::cout << "[Warning]Detected infinite value in weight. stop
         learning." << std::endl;
             return false;
@@ -875,8 +894,10 @@ class network {
       on_epoch_enumerate();
     }
     set_netphase(net_phase::test);
-    return true;
+    return stop_training_ ? train_result::user_abort : train_result::succeeded;
   }
+    int epoch_at;
+    size_t batch_at_;
 
   /**
    * train on one minibatch
