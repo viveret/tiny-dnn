@@ -550,10 +550,6 @@ class layer : public node {
     // the computational graph
     if (in_channels_ == 0 || out_channels_ == 0) {
       throw new nn_error("in channels or out channels was 0");
-    } else if (&fwd_in_data_ == nullptr) {
-      throw new nn_error("&fwd_in_data_ == nullptr");
-    } else if (&fwd_out_data_ == nullptr) {
-      throw new nn_error("&fwd_out_data_ == nullptr");
     }
 
     fwd_in_data_.resize(in_channels_);

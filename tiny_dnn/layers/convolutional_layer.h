@@ -283,14 +283,8 @@ class convolutional_layer : public layer {
   void forward_propagation(const std::vector<tensor_t *> &in_data,
                            std::vector<tensor_t *> &out_data) override {
     // apply padding to the input tensor
-      if (&in_data == nullptr) {
-          throw tiny_dnn::nn_error("In data size too small to forward propagate null");
-      }
       if (in_data.size() <= 0) {
           throw tiny_dnn::nn_error("In data size too small to forward propagate 1");
-      }
-      if (in_data[0] == nullptr) {
-          throw tiny_dnn::nn_error("In data size too small to forward propagate 2");
       }
       if (in_data[0]->size() <= 0) {
           throw tiny_dnn::nn_error("In data size too small to forward propagate 3");
