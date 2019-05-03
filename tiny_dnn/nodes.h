@@ -131,6 +131,11 @@ class nodes {
   size_t in_data_size() const { return nodes_.front()->in_data_size(); }
   size_t out_data_size() const { return nodes_.back()->out_data_size(); }
 
+    void clearNodes() {
+        own_nodes_.clear();
+        nodes_.clear();
+    }
+
   template <typename T>
   const T &at(size_t index) const {
     const T *v = dynamic_cast<const T *>(nodes_[index]);

@@ -829,6 +829,10 @@ class network {
         return batch_at_;
     }
 
+    void removeLayers() {
+      net_.clearNodes();
+    }
+
  protected:
   float_t fprop_max(const vec_t &in) {
     const vec_t &prediction = fprop(in);
