@@ -373,17 +373,47 @@ class layer : public node {
     }
   }
 
-  virtual void load(
-    std::istream &is,
-    const int precision = std::numeric_limits<float_t>::digits10 + 2
-    /*by default, we want there to be enough precision*/) {  // NOLINT
-    is >> std::setprecision(precision);
+  virtual void save_raw(std::ostream &os) const {
+    /*
+     if (is_exploded()) {
+       throw nn_error("failed to save weights because of infinite weight");
+    }*/
     auto all_weights = weights();
+    auto weight_size = sizeof(float_t);
+    os.put((char)weight_size);
+    char *weightbuf = new char[weight_size];
     for (auto &weight : all_weights) {
-      for (auto &w : *weight) is >> w;
+      for (auto w : *weight) {
+        memcpy((void*)weightbuf, (void*)&w, weight_size);
+        os.write(weightbuf, weight_size);
+      }
     }
-    initialized_ = true;
   }
+
+    virtual void load(
+            std::istream &is,
+            const int precision = std::numeric_limits<float_t>::digits10 + 2
+            /*by default, we want there to be enough precision*/) {  // NOLINT
+        is >> std::setprecision(precision);
+        auto all_weights = weights();
+        for (auto &weight : all_weights) {
+            for (auto &w : *weight) is >> w;
+        }
+        initialized_ = true;
+    }
+
+    virtual void load_raw(std::istream &is) {  // NOLINT
+        auto all_weights = weights();
+        auto weight_size = is.get();
+        char *weightbuf = new char[weight_size];
+        for (auto &weight : all_weights) {
+            for (auto &w : *weight) {
+                is.read(weightbuf, weight_size);
+                memcpy((void*)&w, (void*)weightbuf, weight_size);
+            }
+        }
+        initialized_ = true;
+    }
 
   virtual void load(const std::vector<float_t> &src, int &idx) {  // NOLINT
     auto all_weights = weights();

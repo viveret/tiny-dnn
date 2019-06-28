@@ -771,10 +771,18 @@ class network {
     net_.save(os);
   }
 
+  void save_raw(std::ostream &os) const {
+    net_.save_raw(os);
+  }
+
   ///< @deprecated use load(filename,target,format) instead.
   void load(std::istream &is) {
     is.precision(std::numeric_limits<tiny_dnn::float_t>::digits10);
     net_.load(is);
+  }
+
+  void load_raw(std::istream &is) {
+    net_.load_raw(is);
   }
 
   /**

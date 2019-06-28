@@ -167,10 +167,23 @@ class nodes {
     }
   }
 
+  void save_raw(std::ostream &os) const {  // NOLINT
+    for (auto &l : nodes_) {
+      l->save_raw(os);
+    }
+  }
+
   void load(std::istream &is) {  // NOLINT
     setup(false);
     for (auto &l : nodes_) {
       l->load(is);
+    }
+  }
+
+  void load_raw(std::istream &is) {  // NOLINT
+    setup(false);
+    for (auto &l : nodes_) {
+      l->load_raw(is);
     }
   }
 
